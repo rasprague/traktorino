@@ -36,7 +36,7 @@ const bool ShiftPWM_balanceLoad = false;
 // If using with ATmega328 - Uno, Mega, Nano...
 #include <MIDI.h> // MIDI library (by Forty Seven Effects) >> https://github.com/FortySevenEffects/arduino_midi_library/releases/tag/4.3.1
 MIDI_CREATE_DEFAULT_INSTANCE();
-#include "Multiplexer4067_pins4567.h" // Multiplexer CD4067 library, specialized to pins 4, 5, 6, 7 so digitalWriteFast can be used
+#include "Multiplexer4067Fast.h" // Multiplexer CD4067 library, templated version to use digitalWriteFast
 #include <Thread.h> // Threads library (by Ivan seidel) >> https://github.com/ivanseidel/ArduinoThread
 #include <StaticThreadController.h> 
 #include <Encoder.h> // Encoder library >> https://github.com/PaulStoffregen/Encoder
@@ -114,8 +114,8 @@ byte ledOnOffPin = 10; //On Off pin
 
 /////////////////////////////////////////////
 // Multiplexer
-Multiplexer4067_pins4567 mplexPots = Multiplexer4067_pins4567(A0);
-Multiplexer4067_pins4567 mplexButtons = Multiplexer4067_pins4567(A1);
+Multiplexer4067Fast<4, 5, 6, 7> mplexPots(A0);
+Multiplexer4067Fast<4, 5, 6, 7> mplexButtons(A1);
 const int numReadings = 1;
 
 /////////////////////////////////////////////

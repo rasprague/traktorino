@@ -2,7 +2,7 @@ NOTES
 
 Traktorino branch for use with an Arduino Mega (for Underdog Mod Shop's Mega Traktorino)
 
-Uses a heavily modified Muliplexer4067 library, hardcoded to use pins 4, 5, 6, 7
+Uses a templated Muliplexer4067 library
 so that the digitalWriteFast library can be used to speed things up significantly
 
 REQUIRES the digitalWriteFast library be installed https://github.com/NicksonYap/digitalWriteFast
