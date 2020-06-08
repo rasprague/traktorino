@@ -70,6 +70,7 @@ public:
 private:
   uint8_t  _sig;
   uint8_t  _dir;
+  
   void _addressing(uint8_t ch) {
     switch(ch) {
       case 0:
