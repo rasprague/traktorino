@@ -36,19 +36,19 @@ const bool ShiftPWM_balanceLoad = false;
 // If using with ATmega328 - Uno, Mega, Nano...
 #include <MIDI.h> // MIDI library (by Forty Seven Effects) >> https://github.com/FortySevenEffects/arduino_midi_library/releases/tag/4.3.1
 MIDI_CREATE_DEFAULT_INSTANCE();
-#include <Multiplexer4067.h> // Multiplexer CD4067 library >> https://github.com/sumotoy/Multiplexer4067
+#include "Multiplexer4067_pins4567.h" // Multiplexer CD4067 library, specialized to pins 4, 5, 6, 7 so digitalWriteFast can be used
 #include <Thread.h> // Threads library (by Ivan seidel) >> https://github.com/ivanseidel/ArduinoThread
-#include <ThreadController.h> 
+#include <StaticThreadController.h> 
 #include <Encoder.h> // Encoder library >> https://github.com/PaulStoffregen/Encoder
 
 
 /////////////////////////////////////////////
 // buttons
 const byte muxNButtons = 13; // *coloque aqui o numero de entradas digitais utilizadas no multiplexer
-const byte NButtons = 1; // *coloque aqui o numero de entradas digitais utilizadas
+const byte NButtons = 13; // *coloque aqui o numero de entradas digitais utilizadas
 const byte totalButtons = muxNButtons + NButtons;
 const byte muxButtonPin[muxNButtons] = {0, 1, 2, 3, 4, 5, 9, 10, 11, 12, 13, 14, 15}; // *neste array coloque na ordem desejada os pinos das portas digitais utilizadas
-const byte buttonPin[NButtons] = {9}; // *neste array coloque na ordem desejada os pinos das portas digitais utilizadas
+const byte buttonPin[NButtons] = {9, 14, 15, 16, 17, 18, 19, 20, 21, 23, 25, 27, 29}; // *neste array coloque na ordem desejada os pinos das portas digitais utilizadas
 int buttonCState[totalButtons] = {0}; // estado atual da porta digital
 int buttonPState[totalButtons] = {0}; // estado previo da porta digital
 
@@ -59,12 +59,15 @@ unsigned long debounceDelay = 5;    // the debounce time; increase if the output
 
 /////////////////////////////////////////////
 // potentiometers
-const byte NPots = 14; // *coloque aqui o numero de entradas analogicas utilizadas
-const byte muxPotPin[NPots] = {0, 1, 2, 3, 4, 5, 6, 15, 14, 13, 12, 11, 10, 8}; // *neste array coloque na ordem desejada os pinos das portas analogicas, ou mux channel, utilizadas
-int potCState[NPots] = {0}; // estado atual da porta analogica
-int potPState[NPots] = {0}; // estado previo da porta analogica
+const byte muxNPots = 14; // *coloque aqui o numero de entradas analogicas utilizadas
+const byte NPots = 4; // put the number of pots on analog pins here
+const byte totalPots = muxNPots + NPots;
+const byte muxPotPin[muxNPots] = {0, 1, 2, 3, 4, 5, 6, 15, 14, 13, 12, 11, 10, 8}; // *neste array coloque na ordem desejada os pinos das portas analogicas, ou mux channel, utilizadas
+const byte potPin[NPots] = {A6, A7, A8, A9};
+int potCState[totalPots] = {0}; // estado atual da porta analogica
+int potPState[totalPots] = {0}; // estado previo da porta analogica
 int potVar = 0; // variacao entre o valor do estado previo e o atual da porta analogica
-int lastCcValue[NPots] = {0};
+int lastCcValue[totalPots] = {0};
 
 /////////////////////////////////////////////
 // pot reading
@@ -111,14 +114,15 @@ byte ledOnOffPin = 10; //On Off pin
 
 /////////////////////////////////////////////
 // Multiplexer
-Multiplexer4067 mplexPots = Multiplexer4067(4, 5, 6, 7, A0);
-Multiplexer4067 mplexButtons = Multiplexer4067(4, 5, 6, 7, A1);
+Multiplexer4067_pins4567 mplexPots = Multiplexer4067_pins4567(A0);
+Multiplexer4067_pins4567 mplexButtons = Multiplexer4067_pins4567(A1);
+const int numReadings = 1;
 
 /////////////////////////////////////////////
 // threads - programa cada atividade do Arduino para acontecer em um determinado tempo
-ThreadController cpu; //thread master, onde as outras vao ser adicionadas
 Thread threadReadPots; // thread para controlar os pots
 Thread threadReadButtons; // thread para controlar os botoes
+StaticThreadController<2> cpu(&threadReadPots, &threadReadButtons); //thread master, onde as outras vao ser adicionadas
 
 /////////////////////////////////////////////
 void setup() {
@@ -166,11 +170,9 @@ void setup() {
   // pots
   threadReadPots.setInterval(10);
   threadReadPots.onRun(readPots);
-  cpu.add(&threadReadPots);
   // buttons
   threadReadButtons.setInterval(20);
   threadReadButtons.onRun(readButtons);
-  cpu.add(&threadReadButtons);
 
   /////////////////////////////////////////////
   //leds
@@ -198,7 +200,7 @@ void loop() {
 void readButtons() {
 
   for (int i = 0; i < muxNButtons; i++) { //reads buttons on mux
-    int buttonReading = mplexButtons.readChannel(muxButtonPin[i]);
+    int buttonReading = mplexButtons.readChannel(muxButtonPin[i], numReadings);
     //buttonCState[i] = map(mplex.readChannel(muxButtonPin[i]), 22, 1023, 0, 2); // stores on buttonCState
     if (buttonReading > 100) {
       buttonCState[i] = HIGH;
@@ -247,11 +249,15 @@ void readButtons() {
 
 void readPots() {
 
-  for (int i = 0; i < NPots; i++) { // le todas entradas analogicas utilizadas, menos a dedicada a troca do canal midi
-    potCState[i] = mplexPots.readChannel(muxPotPin[i]);
+  for (int i = 0; i < muxNPots; i++) { // le todas entradas analogicas utilizadas, menos a dedicada a troca do canal midi
+    potCState[i] = mplexPots.readChannel(muxPotPin[i], numReadings);
   }
 
-  for (int i = 0; i < NPots; i++) {
+  for (int i = 0; i < NPots; i++) { // read pots attached to analog pins
+    potCState[i + muxNPots] = analogRead(potPin[i]);
+  }
+
+  for (int i = 0; i < totalPots; i++) {
 
     potVar = abs(potCState[i] - potPState[i]); // calcula a variacao da porta analogica
 
