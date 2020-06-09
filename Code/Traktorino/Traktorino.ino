@@ -74,8 +74,8 @@ int lastCcValue[totalPots] = {0};
 int TIMEOUT = 50; //quantidade de tempo em que o potenciometro sera lido apos ultrapassar o varThreshold
 byte varThreshold = 8; //threshold para a variacao no sinal do potenciometro
 boolean potMoving = true; // se o potenciometro esta se movendo
-unsigned long pTime[NPots] = {0}; // tempo armazenado anteriormente
-unsigned long timer[NPots] = {0}; // armazena o tempo que passou desde que o timer foi zerado
+unsigned long pTime[totalPots] = {0}; // tempo armazenado anteriormente
+unsigned long timer[totalPots] = {0}; // armazena o tempo que passou desde que o timer foi zerado
 
 /////////////////////////////////////////////
 // encoder
